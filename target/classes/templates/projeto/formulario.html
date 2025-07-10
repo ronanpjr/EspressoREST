@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${projetoCadastroDTO != null} ? #{titulo.cadastro.projeto} : #{titulo.edicao.projeto}"></title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+    <h1 th:text="${projetoCadastroDTO != null} ? #{titulo.cadastro.projeto} : #{titulo.edicao.projeto}"></h1>
+
+    <div th:if="${fail}" class="message-box error">
+        <p th:text="${fail}"></p>
+    </div>
+
+    <div th:if="${projetoCadastroDTO != null}">
+        <form th:action="@{/projetos/salvar}" th:object="${projetoCadastroDTO}" method="post">
+
+            <div>
+                <label for="nome" th:text="#{projeto.label.nome}"></label>
+                <input type="text" id="nome" th:field="*{nome}" th:placeholder="#{projeto.placeholder.nome}" required/>
+            </div>
+
+            <div>
+                <label for="descricao" th:text="#{projeto.label.descricao}"></label>
+                <textarea id="descricao" th:field="*{descricao}" rows="4" th:placeholder="#{projeto.placeholder.descricao}"></textarea>
+            </div>
+
+            <div class="multiselect-container">
+                <label th:text="#{projeto.label.membros}"></label>
+                <select multiple th:field="*{membrosIds}" size="10">
+                    <option th:each="usuario : ${usuarios}" th:value="${usuario.id}" th:text="${usuario.nome}"></option>
+                </select>
+                <p class="multiselect-instructions" th:text="#{projeto.instrucoes.multiselect}"></p>
+            </div>
+
+            <button type="submit" class="button button-primary" th:text="#{projeto.botao.salvar}"></button>
+            <a th:href="@{/projetos/listar}" class="button button-secondary" th:text="#{link.cancelar}">Cancelar</a>
+        </form>
+    </div>
+
+    <div th:if="${projetoEdicaoDTO != null}">
+        <form th:action="@{/projetos/editar}" th:object="${projetoEdicaoDTO}" method="post">
+
+            <input type="hidden" th:field="*{id}"/>
+
+            <div>
+                <label for="nome-edit" th:text="#{projeto.label.nome}"></label>
+                <input type="text" id="nome-edit" th:field="*{nome}" th:placeholder="#{projeto.placeholder.nome}" required/>
+            </div>
+
+            <div>
+                <label for="descricao-edit" th:text="#{projeto.label.descricao}"></label>
+                <textarea id="descricao-edit" th:field="*{descricao}" rows="4" th:placeholder="#{projeto.placeholder.descricao}"></textarea>
+            </div>
+
+            <div class="multiselect-container">
+                <label th:text="#{projeto.label.membros}"></label>
+                <select multiple th:field="*{membrosIds}" size="10">
+                    <option th:each="usuario : ${usuarios}" th:value="${usuario.id}" th:text="${usuario.nome}"
+                            th:selected="${#lists.contains(projetoEdicaoDTO.membrosIds, usuario.id)}"></option>
+                </select>
+                <p class="multiselect-instructions" th:text="#{projeto.instrucoes.multiselect}"></p>
+            </div>
+
+            <button type="submit" class="button button-primary" th:text="#{projeto.botao.atualizar}"></button>
+            <a th:href="@{/projetos/listar}" class="button button-secondary" th:text="#{link.cancelar}">Cancelar</a>
+        </form>
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

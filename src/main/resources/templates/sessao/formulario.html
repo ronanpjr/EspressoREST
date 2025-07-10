@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${sessaoEdicaoDTO != null ? 'Edição de Sessão' : 'Nova Sessão de Teste'}"></title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+    <h1 th:text="${sessaoEdicaoDTO != null ? 'Editar Sessão de Teste' : 'Nova Sessão para o Projeto: ' + projeto.nome()}"></h1>
+
+    <div th:if="${mensagemFalha}" class="message-box error">
+        <p th:text="${mensagemFalha}"></p>
+    </div>
+
+    <!-- Bloco de EDIÇÃO: Mostrado apenas se o DTO de edição existir -->
+    <th:block th:if="${sessaoEdicaoDTO != null}">
+        <form th:action="@{/sessoes/editar}" th:object="${sessaoEdicaoDTO}" method="post">
+
+            <input type="hidden" th:field="*{id}" />
+            <input type="hidden" th:field="*{projetoId}" />
+
+            <div>
+                <label for="estrategiaId-edit">Estratégia de Teste:</label>
+                <select id="estrategiaId-edit" th:field="*{estrategiaId}" required>
+                    <option value="">-- Selecione uma Estratégia --</option>
+                    <option th:each="est : ${estrategias}"
+                            th:value="${est.id}"
+                            th:text="${est.nome}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('estrategiaId')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('estrategiaId')}" th:text="${err}"></p>
+                </div>
+            </div>
+            <div>
+                <label for="duracao-edit">Duração (em minutos):</label>
+                <input type="number" id="duracao-edit" th:field="*{duracao}" placeholder="Ex: 60" required min="1"/>
+                <div th:if="${#fields.hasErrors('duracao')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('duracao')}" th:text="${err}"></p>
+                </div>
+            </div>
+            <div>
+                <label for="descricao-edit">Descrição / Objetivos da Sessão:</label>
+                <textarea id="descricao-edit" th:field="*{descricao}" rows="4" placeholder="Descreva o que será focado nesta sessão de teste..." required></textarea>
+                <div th:if="${#fields.hasErrors('descricao')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('descricao')}" th:text="${err}"></p>
+                </div>
+            </div>
+
+            <button type="submit" class="button button-primary">Atualizar Sessão</button>
+            <a th:href="@{/sessoes/projeto/{id}(id=${sessaoEdicaoDTO.projetoId})}" class="button button-secondary">Cancelar</a>
+        </form>
+    </th:block>
+
+    <!-- Bloco de CRIAÇÃO: Mostrado se o DTO de edição NÃO existir -->
+    <th:block th:unless="${sessaoEdicaoDTO != null}">
+        <!-- Este formulário agora usa th:object="${sessaoDTO}" para compatibilidade -->
+        <form th:action="@{/sessoes/criar}" th:object="${sessaoDTO}" method="post">
+            <input type="hidden" th:field="*{projetoId}" />
+
+            <div>
+                <label for="estrategiaId">Estratégia de Teste:</label>
+                <select id="estrategiaId" th:field="*{estrategiaId}" required>
+                    <option value="">-- Selecione uma Estratégia --</option>
+                    <option th:each="est : ${estrategias}"
+                            th:value="${est.id}"
+                            th:text="${est.nome}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('estrategiaId')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('estrategiaId')}" th:text="${err}"></p>
+                </div>
+            </div>
+            <div>
+                <label for="duracao">Duração (em minutos):</label>
+                <input type="number" id="duracao" th:field="*{duracao}" placeholder="Ex: 60" required min="1"/>
+                <div th:if="${#fields.hasErrors('duracao')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('duracao')}" th:text="${err}"></p>
+                </div>
+            </div>
+            <div>
+                <label for="descricao">Descrição / Objetivos da Sessão:</label>
+                <textarea id="descricao" th:field="*{descricao}" rows="4" placeholder="Descreva o que será focado nesta sessão de teste..." required></textarea>
+                <div th:if="${#fields.hasErrors('descricao')}" class="message-box error">
+                    <p th:each="err : ${#fields.errors('descricao')}" th:text="${err}"></p>
+                </div>
+            </div>
+
+            <button type="submit" class="button button-primary">Criar Sessão</button>
+            <a th:href="@{/sessoes/projeto/{id}(id=${projeto.id()})}" class="button button-secondary">Cancelar</a>
+        </form>
+    </th:block>
+
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

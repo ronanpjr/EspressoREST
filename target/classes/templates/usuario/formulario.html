@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${usuarioForm.id() == null} ? #{titulo.cadastro.usuario} : #{titulo.edicao.usuario}"></title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="stylesheet" th:href="@{/css/layout.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+    <h1 th:text="${usuarioForm.id() == null} ? #{titulo.cadastro.usuario} : #{titulo.edicao.usuario}"></h1>
+
+    <form th:action="${usuarioForm.id() == null ? '/usuarios/salvar' : '/usuarios/editar'}"
+          th:object="${usuarioForm}" method="post">
+
+        <div th:if="${#fields.hasErrors('global')}" class="message-box error">
+            <ul>
+                <li th:each="err : ${#fields.errors('global')}" th:text="${err}"></li>
+            </ul>
+        </div>
+        <div th:if="${fail}" class="message-box error">
+            <p th:text="${fail}"></p>
+        </div>
+
+        <input type="hidden" name="id" th:value="${usuarioForm.id()}" th:if="${usuarioForm.id() != null}"/>
+
+        <div>
+            <label for="nome" th:text="#{usuario.label.nome}"></label>
+            <input type="text" id="nome" th:field="*{nome}" th:placeholder="#{usuario.placeholder.nome}" required/>
+            <div th:if="${#fields.hasErrors('nome')}" class="message-box error">
+                <p th:each="err : ${#fields.errors('nome')}" th:text="${err}"></p>
+            </div>
+        </div>
+
+        <div>
+            <label for="email" th:text="#{usuario.label.email} + ' (Login):'"></label>
+            <input type="email" id="email" th:field="*{email}" th:placeholder="#{usuario.placeholder.email}" required/>
+            <div th:if="${#fields.hasErrors('email')}" class="message-box error">
+                <p th:each="err : ${#fields.errors('email')}" th:text="${err}"></p>
+            </div>
+        </div>
+
+        <div>
+            <label for="senha" th:text="#{usuario.label.senha}"></label>
+            <input type="password" id="senha" th:field="*{senha}" th:placeholder="#{usuario.placeholder.senha}"
+                   th:required="${usuarioForm.id() == null}"/>
+            <small th:if="${usuarioForm.id() != null}" th:text="#{usuario.senha.manter_atual}" style="color: var(--cafe-medio);"></small>
+            <div th:if="${#fields.hasErrors('senha')}" class="message-box error">
+                <p th:each="err : ${#fields.errors('senha')}" th:text="${err}"></p>
+            </div>
+        </div>
+
+        <div>
+            <label for="papel" th:text="#{usuario.label.papel}"></label>
+            <select id="papel" th:field="*{papel}" required>
+                <option value="" th:text="#{papel.selecione}"></option>
+                <option th:each="papelOption : ${T(br.ufscar.dc.dsw.models.enums.Papel).values()}"
+                        th:value="${papelOption}" th:text="#{${'papel.' + #strings.toLowerCase(papelOption.name())}}"></option>
+            </select>
+            <div th:if="${#fields.hasErrors('papel')}" class="message-box error">
+                <p th:each="err : ${#fields.errors('papel')}" th:text="${err}"></p>
+            </div>
+        </div>
+
+        <button type="submit" th:text="${usuarioForm.id() == null} ? #{acao.salvar_usuario} : #{acao.atualizar_usuario}" class="button button-primary"></button>
+        <a th:href="@{/usuarios/listar}" class="button button-secondary" th:text="#{link.cancelar}"></a>
+    </form>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

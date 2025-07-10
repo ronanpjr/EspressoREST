@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{projeto.lista.titulo}">Lista de Projetos</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+    <h1 th:text="#{projeto.lista.titulo}">Lista de Projetos</h1>
+
+    <div th:if="${success}" class="message-box success">
+        <p th:text="${success}"></p>
+    </div>
+    <div th:if="${fail}" class="message-box error">
+        <p th:text="${fail}"></p>
+    </div>
+    <div th:if="${ehAdmin}">
+        <p><a th:href="@{/projetos/cadastro}" class="button button-primary" th:text="#{projeto.botao.novo}">Novo Projeto</a></p>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th th:text="#{projeto.tabela.id}">ID</th>
+            <th>
+                <span th:text="#{projeto.tabela.nome}">Nome</span>
+                <a th:href="@{/projetos/listar(sortBy='nome', sortOrder='asc')}" title="Ordenar por Nome Crescente">&#9650;</a>
+                <a th:href="@{/projetos/listar(sortBy='nome', sortOrder='desc')}" title="Ordenar por Nome Decrescente">&#9660;</a>
+            </th>
+            <th th:text="#{projeto.tabela.descricao}">Descrição</th>
+            <th>
+                <span th:text="#{projeto.tabela.dataCriacao}">Data de Criação</span>
+                <a th:href="@{/projetos/listar(sortBy='dataCriacao', sortOrder='asc')}" title="Ordenar por Data de Criação Crescente">&#9650;</a>
+                <a th:href="@{/projetos/listar(sortBy='dataCriacao', sortOrder='desc')}" title="Ordenar por Data de Criação Decrescente">&#9660;</a>
+            </th>
+            <th th:text="#{projeto.tabela.membros}">Membros</th>
+            <th th:text="#{projeto.tabela.acoes}">Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="projeto : ${listaProjetos}">
+            <td th:text="${projeto.id}" class="id-table2"></td>
+            <td th:text="${projeto.nome}"></td>
+            <td th:text="${projeto.descricao}"></td>
+            <td th:text="${#temporals.format(projeto.dataCriacao, 'dd/MM/yyyy')}"></td>
+            <td>
+                <ul>
+                    <li th:each="membro : ${projeto.nomesMembros}" th:text="${membro}"></li>
+                </ul>
+            </td>
+            <td>
+                <a th:if="${ehAdmin or projeto.usuarioLogadoEhMembro}"
+                   th:href="@{/sessoes/projeto/{id}(id=${projeto.id})}" class="button button-primary" th:text="#{projeto.botao.verSessoes}">Ver Sessões</a>
+                <a th:if="${ehAdmin}" th:href="@{/projetos/editar/{id}(id=${projeto.id})}" class="button button-secondary" th:text="#{projeto.botao.editar}">Editar</a>
+                <a th:if="${ehAdmin}" th:href="@{/projetos/remover/{id}(id=${projeto.id})}" class="button button-secondary"
+                   onclick="return confirm([[#{projeto.confirm.remover}]]);" th:text="#{projeto.botao.excluir}">Excluir</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p><a th:href="@{/home}" class="button button-secondary" th:text="#{link.voltarMenu}">Voltar ao Menu Principal</a></p>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

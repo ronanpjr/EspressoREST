@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{titulo.pagina.home}">Home - Espresso Game Testing</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+    <h2 style="text-align: center;">
+        <span th:text="#{titulo.home}"></span>,
+        <span th:if="${#authentication != null and #authentication.principal != null and #authentication.principal != 'anonymousUser'}" th:text="${#authentication.name}"></span>
+        <span th:if="${#authentication == null or #authentication.principal == null or #authentication.principal == 'anonymousUser'}" th:text="#{titulo.usuario.visitante}"></span>!
+    </h2>
+    <p style="text-align: center; margin-bottom: 30px; color: var(--cafe-medio);" th:text="#{home.subtitulo}"></p>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3 th:text="#{home.card.usuarios.titulo}"></h3>
+            <p th:text="#{home.card.usuarios.descricao}"></p>
+            <a th:href="@{/usuarios/listar}" class="button button-primary" th:text="#{home.card.usuarios.botao}"></a>
+        </div>
+
+        <div class="card">
+            <h3 th:text="#{home.card.projetos.titulo}"></h3>
+            <p th:text="#{home.card.projetos.descricao}"></p>
+            <a th:href="@{/projetos/listar}" class="button button-primary" th:text="#{home.card.projetos.botao}"></a>
+        </div>
+
+        <div class="card">
+            <h3 th:text="#{home.card.estrategias.titulo}"></h3>
+            <p th:text="#{home.card.estrategias.descricao}"></p>
+            <a th:href="@{/estrategias}" class="button button-primary" th:text="#{home.card.estrategias.botao}"></a>
+        </div>
+
+        <div class="card">
+            <h3 th:text="#{home.card.sessoes.titulo}"></h3>
+            <p th:text="#{home.card.sessoes.descricao}"></p>
+            <a th:href="@{/sessoes/minhas-sessoes}" class="button button-primary" th:text="#{home.card.sessoes.botao}"></a>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+        <form th:action="@{/logout}" method="post" class="logout">
+            <button type="submit" class="button button-secondary" th:text="#{home.botao.sair}"></button>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

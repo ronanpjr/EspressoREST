@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<footer th:fragment="footer">
+    <p th:text="#{footer.copyright}">2025 Espresso Game Testing. Um Software Open-source para a disciplina de Desenvolvimento Web .</p>
+    <p th:text="#{footer.motto}">Desenvolvido com café e paixão!</p>
+
+    <div class="language-switcher">
+        <form th:action="@{/language}" method="post" style="display:inline;" class="lang-button">
+            <button type="submit" name="lang" value="en" th:text="#{language.en}">English</button>
+        </form>
+        <form th:action="@{/language}" method="post" style="display:inline;" class="lang-button">
+            <button type="submit" name="lang" value="pt" th:text="#{language.pt}">Português</button>
+        </form>
+    </div>
+
+</footer>
+</body>
+</html>

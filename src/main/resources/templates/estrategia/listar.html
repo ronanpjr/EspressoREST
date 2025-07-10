@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="#{titulo.pagina.estrategias}">Gerenciador de Estratégias</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="wrapper">
+  <h1 th:text="#{titulo.lista.estrategias}">Lista de Estratégias</h1>
+
+  <div th:if="${success}" class="message-box success">
+    <p th:text="${success}"></p>
+  </div>
+  <div th:if="${fail}" class="message-box error">
+    <p th:text="${fail}"></p>
+  </div>
+
+  <div style="margin-bottom: 20px;" sec:authorize="hasRole('ADMIN')">
+    <a th:href="@{/estrategias/novo}" class="button button-primary" th:text="#{link.nova_estrategia}">Nova Estratégia</a>
+  </div>
+
+  <div th:if="${listaEstrategias != null and not #lists.isEmpty(listaEstrategias)}">
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th th:text="#{tabela.coluna.id}">ID</th>
+        <th th:text="#{tabela.coluna.nome}">Nome</th>
+        <th th:text="#{tabela.coluna.descricao}">Descrição</th>
+        <th sec:authorize="hasRole('ADMIN')" th:text="#{tabela.coluna.acoes}">Ações</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="estrategia : ${listaEstrategias}">
+        <td th:text="${estrategia.id}" class="id-table"></td>
+        <td th:text="${estrategia.nome}"></td>
+        <td th:text="${estrategia.descricao}"></td>
+        <td sec:authorize="hasRole('ADMIN')">
+          <a th:href="@{/estrategias/editar/{id}(id=${estrategia.id})}" class="button button-secondary" th:text="#{acao.editar}">Editar</a>
+          <a th:href="@{/estrategias/remover/{id}(id=${estrategia.id})}" class="button button-secondary"
+             th:text="#{acao.excluir}"
+             th:onclick="return confirm(#{estrategia.confirmar.exclusao})">Excluir</a>
+          <a th:href="@{/estrategias/detalhes/{id}(id=${estrategia.id})}" class="button button-primary" th:text="#{acao.detalhes}">Detalhes</a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <div th:unless="${listaEstrategias != null and not #lists.isEmpty(listaEstrategias)}">
+    <div style="text-align: center; padding: 40px 20px; color: #666; font-style: italic;">
+      <p th:text="#{estrategia.nenhuma}">Nenhuma estratégia encontrada.</p>
+      <p sec:authorize="hasRole('ADMIN')" style="margin-top: 20px;" th:text="#{estrategia.clique_novo}"></p>
+    </div>
+  </div>
+
+  <div th:replace="~{fragments/navigation :: navigation-section}"></div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
