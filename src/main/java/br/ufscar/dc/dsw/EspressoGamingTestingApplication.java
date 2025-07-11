@@ -8,13 +8,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
-public class EspressoGamingTestingJpaApplication {
+public class EspressoGamingTestingApplication {
 
 	@Autowired
 	private DatabaseSeeder databaseSeeder;
 
 	public static void main(String[] args) {
-		SpringApplication.run(EspressoGamingTestingJpaApplication.class, args);
+		SpringApplication.run(EspressoGamingTestingApplication.class, args);
 	}
 
 	@Bean

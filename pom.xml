@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>br.ufscar.dc.dsw</groupId>
-    <artifactId>EspressoGamingTestingJPA</artifactId>
+    <artifactId>EspressoGamingTesting</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>EspressoGamingTestingJPA</name>
-    <description>EspressoGamingTestingJPA</description>
+    <name>EspressoGamingTesting</name>
+    <description>EspressoGamingTesting</description>
     <url/>
     <licenses>
         <license/>
