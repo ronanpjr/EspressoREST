@@ -7,12 +7,6 @@ import java.util.UUID;
 
 public record SessaoEdicaoDTO(
         @NotNull
-        UUID id,
-
-        @NotNull
-        UUID projetoId,
-
-        @NotNull
         UUID estrategiaId,
 
         @NotNull

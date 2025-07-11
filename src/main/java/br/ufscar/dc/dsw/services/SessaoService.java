@@ -15,7 +15,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,21 +38,19 @@ public class SessaoService {
     }
 
     @Transactional
-    public SessaoModel criarSessao(SessaoDTO dto, String emailTester) {
+    public SessaoModel criarSessao(SessaoDTO dto, UsuarioModel tester) {
         ProjetoModel projeto = projetoRepository.findById(dto.projetoId())
                 .orElseThrow(() -> new EntityNotFoundException("Projeto não encontrado"));
         EstrategiaModel estrategia = estrategiaRepository.findById(dto.estrategiaId())
                 .orElseThrow(() -> new EntityNotFoundException("Estratégia não encontrada"));
-        UsuarioModel testerManaged = usuarioRepository.findByEmail(emailTester)
-                .orElseThrow(() -> new EntityNotFoundException("Tester com email " + emailTester + " não encontrado no banco de dados"));
-        boolean isMembro = projeto.getMembros().contains(testerManaged);
-        if (testerManaged.getPapel() != Papel.ADMIN && !isMembro) {
+        boolean isMembro = projeto.getMembros().contains(tester);
+        if (tester.getPapel() != Papel.ADMIN && !isMembro) {
             throw new AccessDeniedException("Acesso negado. Apenas administradores ou membros do projeto podem criar sessões");
         }
         SessaoModel sessao = new SessaoModel();
         sessao.setProjeto(projeto);
         sessao.setEstrategia(estrategia);
-        sessao.setTester(testerManaged);
+        sessao.setTester(tester);
         sessao.setDuracao(Duration.ofMinutes(dto.duracao()));
         sessao.setDescricao(dto.descricao());
         sessao.setStatus(StatusSessao.CRIADO);
@@ -66,8 +63,8 @@ public class SessaoService {
     }
 
     @Transactional
-    public SessaoModel atualizarSessao(SessaoEdicaoDTO dto, UsuarioModel usuarioLogado) {
-        SessaoModel sessao = getSessaoAndCheckOwnership(dto.id(), usuarioLogado);
+    public SessaoModel atualizarSessao(UUID id, SessaoEdicaoDTO dto, UsuarioModel usuarioLogado) {
+        SessaoModel sessao = getSessaoAndCheckOwnership(id, usuarioLogado);
         if (sessao.getStatus() != StatusSessao.CRIADO) {
             throw new IllegalStateException("Só é possível editar sessões com status 'CRIADO'.");
         }
@@ -88,7 +85,6 @@ public class SessaoService {
         historico.setSessao(sessao);
         historico.setStatusAnterior(statusAtual);
         historico.setStatusNovo(novoStatus);
-        historico.setDataHora(LocalDateTime.now());
         sessao.getHistorico().add(historico);
         sessao.setStatus(novoStatus);
         return sessaoRepository.save(sessao);
@@ -97,22 +93,37 @@ public class SessaoService {
     @Transactional
     public void deletarSessao(UUID id, UsuarioModel usuarioLogado) {
         SessaoModel sessao = getSessaoAndCheckOwnership(id, usuarioLogado);
+        if (sessao.getStatus() != StatusSessao.CRIADO) {
+            throw new IllegalStateException("Apenas sessões com status 'CRIADO' podem ser excluídas.");
+        }
         sessaoRepository.delete(sessao);
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public SessaoModel buscarPorId(UUID id) {
-        return sessaoRepository.findById(id).orElse(null);
-    }
-
-    @Transactional(Transactional.TxType.SUPPORTS)
-    public List<SessaoModel> listarPorProjeto(UUID projetoId) {
-        return sessaoRepository.findAllByProjetoIdWithDetails(projetoId);
+        return sessaoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Sessão com ID " + id + " não encontrada"));
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<SessaoModel> listarPorTester(String emailTester) {
         return sessaoRepository.findAllByTesterEmailWithDetails(emailTester);
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public SessaoModel buscarPorIdEVerificarDono(UUID id, UsuarioModel usuarioLogado) {
+        return getSessaoAndCheckOwnership(id, usuarioLogado);
+    }
+
+    @Transactional(value = Transactional.TxType.SUPPORTS)
+    public List<SessaoModel> listarPorProjetoEVerificarPermissao(UUID projetoId, UsuarioModel usuarioLogado) {
+        ProjetoModel projeto = projetoRepository.findById(projetoId)
+                .orElseThrow(() -> new EntityNotFoundException("Projeto com ID " + projetoId + " não encontrado"));
+        boolean isMembro = projeto.getMembros().contains(usuarioLogado);
+        if (usuarioLogado.getPapel() != Papel.ADMIN && !isMembro) {
+            throw new AccessDeniedException("Acesso negado. O usuário não é membro deste projeto.");
+        }
+        return sessaoRepository.findAllByProjetoIdWithDetails(projetoId);
     }
 
     private SessaoModel getSessaoAndCheckOwnership(UUID sessaoId, UsuarioModel usuarioLogado) {
@@ -125,7 +136,9 @@ public class SessaoService {
     }
 
     private void validarTransicaoStatus(StatusSessao atual, StatusSessao novo) {
-        if (atual == novo) return;
+        if (atual == novo) {
+            throw new IllegalStateException("A sessão já está com o status " + atual);
+        }
         boolean transicaoValida = switch (atual) {
             case CRIADO -> novo == StatusSessao.EM_EXECUCAO;
             case EM_EXECUCAO -> novo == StatusSessao.FINALIZADO;
@@ -134,14 +147,5 @@ public class SessaoService {
         if (!transicaoValida) {
             throw new IllegalStateException("Transição de status inválida de " + atual + " para " + novo);
         }
-    }
-
-    @Transactional(Transactional.TxType.SUPPORTS)
-    public SessaoModel buscarParaEdicao(UUID id, UsuarioModel usuarioLogado) {
-        SessaoModel sessao = getSessaoAndCheckOwnership(id, usuarioLogado);
-        if (sessao.getStatus() != StatusSessao.CRIADO) {
-            throw new IllegalStateException("Apenas sessões com status 'CRIADO' podem ser editadas");
-        }
-        return sessao;
     }
 }

@@ -1,147 +1,100 @@
 package br.ufscar.dc.dsw.controllers;
 
-import br.ufscar.dc.dsw.dtos.ProjetoDTO;
 import br.ufscar.dc.dsw.dtos.SessaoDTO;
+import br.ufscar.dc.dsw.dtos.SessaoDetalhesDTO;
 import br.ufscar.dc.dsw.dtos.SessaoEdicaoDTO;
-import br.ufscar.dc.dsw.models.EstrategiaModel;
+import br.ufscar.dc.dsw.mappers.SessaoMapper;
 import br.ufscar.dc.dsw.models.SessaoModel;
 import br.ufscar.dc.dsw.models.UsuarioModel;
 import br.ufscar.dc.dsw.models.enums.StatusSessao;
-import br.ufscar.dc.dsw.services.EstrategiaService;
-import br.ufscar.dc.dsw.services.ProjetoService;
 import br.ufscar.dc.dsw.services.SessaoService;
-import br.ufscar.dc.dsw.services.BugService; 
-import br.ufscar.dc.dsw.dtos.BugDTO; 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Controller
-@RequestMapping("/sessoes")
+@RestController
+@RequestMapping("/api/sessoes")
 public class SessaoController {
+
     private final SessaoService sessaoService;
-    private final ProjetoService projetoService;
-    private final EstrategiaService estrategiaService;
-    private final BugService bugService; 
+    private final SessaoMapper sessaoMapper;
 
-    public SessaoController(
-            SessaoService sessaoService,
-            ProjetoService projetoService,
-            EstrategiaService estrategiaService,
-            BugService bugService 
-    ) {
+    public SessaoController(SessaoService sessaoService, SessaoMapper sessaoMapper) {
         this.sessaoService = sessaoService;
-        this.projetoService = projetoService;
-        this.estrategiaService = estrategiaService;
-        this.bugService = bugService; 
+        this.sessaoMapper = sessaoMapper;
     }
 
-    @GetMapping("/cadastro")
-    public String exibirFormularioCadastro(@RequestParam("projetoId") UUID projetoId, Model model) {
-        ProjetoDTO projeto = projetoService.buscarPorId(projetoId);
-        List<EstrategiaModel> estrategias = estrategiaService.findAll();
-        model.addAttribute("sessaoDTO", new SessaoDTO(projetoId, null, null, ""));
-        model.addAttribute("projeto", projeto);
-        model.addAttribute("estrategias", estrategias);
-        return "sessao/formulario";
-    }
-
-    @PostMapping("/criar")
-    public String criarSessao(
-            @ModelAttribute @Valid SessaoDTO sessaoDto,
-            RedirectAttributes redirectAttrs,
+    @PostMapping
+    public ResponseEntity<SessaoDetalhesDTO> criarSessao(
+            @Valid @RequestBody SessaoDTO sessaoDto,
             @AuthenticationPrincipal UsuarioModel usuarioLogado
     ) {
-        SessaoModel novaSessao = sessaoService.criarSessao(sessaoDto, usuarioLogado.getEmail());
-        redirectAttrs.addFlashAttribute("mensagemSucesso", "Sessão criada com sucesso!");
-        return "redirect:/sessoes/" + novaSessao.getId();
+        SessaoModel novaSessao = sessaoService.criarSessao(sessaoDto, usuarioLogado);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(novaSessao.getId()).toUri();
+        return ResponseEntity.created(location).body(sessaoMapper.toDetalhesDTO(novaSessao));
     }
 
-    @GetMapping("/editar/{id}")
-    public String exibirFormularioEdicao(@PathVariable UUID id, Model model, RedirectAttributes redirectAttrs, @AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        SessaoModel sessao = sessaoService.buscarParaEdicao(id, usuarioLogado);
-
-        SessaoEdicaoDTO dto = new SessaoEdicaoDTO(
-                sessao.getId(),
-                sessao.getProjeto().getId(),
-                sessao.getEstrategia().getId(),
-                sessao.getDuracao().toMinutes(),
-                sessao.getDescricao()
-        );
-
-        model.addAttribute("sessaoEdicaoDTO", dto);
-        model.addAttribute("estrategias", estrategiaService.findAll());
-        return "sessao/formulario";
-
-    }
-
-    @PostMapping("/editar")
-    public String editarSessao(
-            @ModelAttribute @Valid SessaoEdicaoDTO sessaoEdicaoDTO,
-            RedirectAttributes redirectAttrs,
-            @AuthenticationPrincipal UsuarioModel usuarioLogado
-    ) {
-
-        sessaoService.atualizarSessao(sessaoEdicaoDTO, usuarioLogado);
-        redirectAttrs.addFlashAttribute("mensagemSucesso", "Sessão atualizada com sucesso!");
-        return "redirect:/sessoes/" + sessaoEdicaoDTO.id();
+    @GetMapping("/me")
+    public ResponseEntity<List<SessaoDetalhesDTO>> listarMinhasSessoes(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+        List<SessaoModel> minhasSessoes = sessaoService.listarPorTester(usuarioLogado.getEmail());
+        return ResponseEntity.ok(minhasSessoes.stream().map(sessaoMapper::toDetalhesDTO).collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}")
-    public String detalhesSessao(@PathVariable UUID id, Model model, @AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        SessaoModel sessao = sessaoService.buscarPorId(id);
-        
-        List<BugDTO> listaBugs = bugService.buscarTodosBugsPorSessao(id, usuarioLogado); 
+    public ResponseEntity<SessaoDetalhesDTO> detalhesSessao(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
+        SessaoModel sessao = sessaoService.buscarPorIdEVerificarDono(id, usuarioLogado);
+        return ResponseEntity.ok(sessaoMapper.toDetalhesDTO(sessao));
+    }
 
-        model.addAttribute("sessao", sessao);
-        model.addAttribute("todosStatus", StatusSessao.values());
-        model.addAttribute("listaBugs", listaBugs); 
-        return "sessao/detalhes";
+    @PutMapping("/{id}")
+    public ResponseEntity<SessaoDetalhesDTO> editarSessao(
+            @PathVariable UUID id,
+            @Valid @RequestBody SessaoEdicaoDTO sessaoEdicaoDTO,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
+        SessaoModel sessaoAtualizada = sessaoService.atualizarSessao(id, sessaoEdicaoDTO, usuarioLogado);
+        return ResponseEntity.ok(sessaoMapper.toDetalhesDTO(sessaoAtualizada));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<SessaoDetalhesDTO> atualizarStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody StatusUpdateDTO statusUpdateDTO,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado) {
+        SessaoModel sessaoAtualizada = sessaoService.atualizarStatus(id, statusUpdateDTO.novoStatus(), usuarioLogado);
+        return ResponseEntity.ok(sessaoMapper.toDetalhesDTO(sessaoAtualizada));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarSessao(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
+        sessaoService.deletarSessao(id, usuarioLogado);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/projeto/{projetoId}")
-    public String listarPorProjeto(@PathVariable UUID projetoId, Model model) {
-        List<SessaoModel> sessoes = sessaoService.listarPorProjeto(projetoId);
-        ProjetoDTO projeto = projetoService.buscarPorId(projetoId);
-        model.addAttribute("sessoes", sessoes);
-        model.addAttribute("projeto", projeto);
-        return "sessao/lista";
-    }
-
-    @PostMapping("/atualizarStatus")
-    public String atualizarStatus(
-            @RequestParam UUID sessaoId,
-            @RequestParam StatusSessao novoStatus,
-            RedirectAttributes redirectAttrs,
-            @AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        sessaoService.atualizarStatus(sessaoId, novoStatus, usuarioLogado);
-        redirectAttrs.addFlashAttribute("mensagemSucesso", "Status da sessão foi atualizado com sucesso!");
-        return "redirect:/sessoes/" + sessaoId;
-    }
-
-    @PostMapping("/deletar")
-    public String deletarSessao(
-            @RequestParam UUID sessaoId,
-            @RequestParam UUID projetoId,
-            RedirectAttributes redirectAttrs,
+    public ResponseEntity<List<SessaoDetalhesDTO>> listarPorProjeto(
+            @PathVariable UUID projetoId,
             @AuthenticationPrincipal UsuarioModel usuarioLogado
     ) {
-        sessaoService.deletarSessao(sessaoId, usuarioLogado);
-        redirectAttrs.addFlashAttribute("mensagemSucesso", "Sessão foi removida com sucesso.");
-        return "redirect:/sessoes/projeto/" + projetoId;
+        List<SessaoModel> sessoes = sessaoService.listarPorProjetoEVerificarPermissao(projetoId, usuarioLogado);
+        return ResponseEntity.ok(sessoes.stream().map(sessaoMapper::toDetalhesDTO).collect(Collectors.toList()));
     }
 
-    @GetMapping("/minhas-sessoes")
-    public String listarMinhasSessoes(Model model, @AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        List<SessaoModel> minhasSessoes = sessaoService.listarPorTester(usuarioLogado.getEmail());
-        model.addAttribute("sessoes", minhasSessoes);
-        model.addAttribute("tituloPagina", "Minhas Sessões de Teste");
-        return "sessao/minhas_sessoes";
+    public record StatusUpdateDTO(@NotNull StatusSessao novoStatus) {
     }
 }

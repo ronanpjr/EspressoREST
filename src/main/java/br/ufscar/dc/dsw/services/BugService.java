@@ -5,6 +5,7 @@ import br.ufscar.dc.dsw.dtos.SessaoDetalhesDTO;
 import br.ufscar.dc.dsw.dtos.BugCadastroDTO;
 import br.ufscar.dc.dsw.dtos.BugDTO;
 import br.ufscar.dc.dsw.dtos.BugEdicaoDTO;
+import br.ufscar.dc.dsw.mappers.SessaoMapper;
 import br.ufscar.dc.dsw.models.BugModel;
 import br.ufscar.dc.dsw.models.SessaoModel;
 import br.ufscar.dc.dsw.models.UsuarioModel;
@@ -23,10 +24,15 @@ import java.util.stream.Collectors;
 @Transactional
 public class BugService {
 
-    @Autowired
-    private BugRepository bugRepository;
-    @Autowired
-    private SessaoRepository sessaoRepository;
+    private final BugRepository bugRepository;
+    private final SessaoRepository sessaoRepository;
+    private final SessaoMapper sessaoMapper;
+
+    public BugService(BugRepository bugRepository, SessaoRepository sessaoRepository, SessaoMapper sessaoMapper) {
+        this.bugRepository = bugRepository;
+        this.sessaoRepository = sessaoRepository;
+        this.sessaoMapper = sessaoMapper;
+    }
 
     @Transactional(readOnly = true)
     @PreAuthorize("@securityService.podeAcessarSessao(#idSessao)")
@@ -77,18 +83,8 @@ public class BugService {
     @PreAuthorize("@securityService.podeAcessarSessao(#idSessao)")
     public SessaoDetalhesDTO buscarDetalhesDaSessao(UUID idSessao) {
         SessaoModel sessao = sessaoRepository.findById(idSessao)
-            .orElseThrow(() -> new IllegalArgumentException("Sessão de teste não encontrada com ID: " + idSessao));
-        
-        ProjetoResumoDTO projetoDTO = new ProjetoResumoDTO(
-            sessao.getProjeto().getId(),
-            sessao.getProjeto().getNome()
-        );
-        
-        return new SessaoDetalhesDTO(
-            sessao.getId(),
-            sessao.getDescricao(),
-            projetoDTO
-        );
+                .orElseThrow(() -> new IllegalArgumentException("Sessão de teste não encontrada com ID: " + idSessao));
+        return sessaoMapper.toDetalhesDTO(sessao);
     }
 
     private BugDTO toBugDTO(BugModel bug) {
