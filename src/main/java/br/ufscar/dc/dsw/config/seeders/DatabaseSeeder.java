@@ -8,11 +8,13 @@ public class DatabaseSeeder {
     private final UsuarioSeeder usuarioSeeder;
     private final EstrategiaSeeder estrategiaSeeder;
     private final ProjetoSeeder projetoSeeder;
+    private final SessaoSeeder sessaoSeeder;
 
-    public DatabaseSeeder(UsuarioSeeder usuarioSeeder, EstrategiaSeeder estrategiaSeeder, ProjetoSeeder projetoSeeder) {
+    public DatabaseSeeder(UsuarioSeeder usuarioSeeder, EstrategiaSeeder estrategiaSeeder, ProjetoSeeder projetoSeeder, SessaoSeeder sessaoSeeder) {
         this.usuarioSeeder = usuarioSeeder;
         this.estrategiaSeeder = estrategiaSeeder;
         this.projetoSeeder = projetoSeeder;
+        this.sessaoSeeder = sessaoSeeder;
     }
 
     public void seedDatabase() {
@@ -21,6 +23,7 @@ public class DatabaseSeeder {
         usuarioSeeder.seedUsuarios();
         estrategiaSeeder.seedEstrategias();
         projetoSeeder.seedProjetos();
+        sessaoSeeder.seedSessoes();
         
         System.out.println("Seed do banco de dados concluído!");
     }

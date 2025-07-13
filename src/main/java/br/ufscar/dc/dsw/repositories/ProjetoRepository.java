@@ -19,7 +19,6 @@ public interface ProjetoRepository extends JpaRepository<ProjetoModel, UUID> {
 
     boolean existsByNome(String nome);
 
-    // Original method (still valid but less flexible for dynamic sorting)
     @Query("SELECT p FROM ProjetoModel p JOIN p.membros m WHERE m = :usuario")
     List<ProjetoModel> findAllByMembro(@Param("usuario") UsuarioModel usuario);
 

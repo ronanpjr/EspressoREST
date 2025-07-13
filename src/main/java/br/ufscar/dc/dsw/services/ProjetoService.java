@@ -73,12 +73,9 @@ public class ProjetoService {
         return projetos.stream().map(this::converterParaDTO).toList();
     }
 
-    // New method to handle sorting for members specifically
-    // You might need to add this method to your ProjetoRepository interface:
-    // List<ProjetoModel> findAllByMembrosContains(UsuarioModel membro, Sort sort);
+
     @Transactional(readOnly = true)
     public List<ProjetoDTO> listarParaUsuarioLogado() {
-        // This existing method will now default to sorting by name ascending
         return listarParaUsuarioLogado("nome", "asc");
     }
 

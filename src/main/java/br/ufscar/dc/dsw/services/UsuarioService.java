@@ -44,7 +44,7 @@ public class UsuarioService implements UserDetailsService {
         usuario.setNome(usuarioCadastroDTO.nome());
         usuario.setEmail(usuarioCadastroDTO.email());
         usuario.setSenha(passwordEncoder.encode(usuarioCadastroDTO.senha()));
-        usuario.setPapel(usuarioCadastroDTO.papel()); // Get papel directly from DTO
+        usuario.setPapel(usuarioCadastroDTO.papel());
 
         try {
             UsuarioModel savedUsuario = usuarioRepository.save(usuario);

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 public record UsuarioCadastroDTO(
-        UUID id,
         @NotBlank(message = "{usuario.nome.notBlank}")
         @Size(max = 256, message = "{usuario.nome.size}")
         String nome,

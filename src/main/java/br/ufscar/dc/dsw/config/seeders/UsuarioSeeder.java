@@ -22,7 +22,6 @@ public class UsuarioSeeder {
         UsuarioModel adminExistente = usuarioService.buscarPorEmail("admin@admin.com");
         if (adminExistente == null) {
             UsuarioCadastroDTO admin = new UsuarioCadastroDTO(
-                    null, // ID is null for new users
                     "Administrador",
                     "admin@admin.com",
                     "admin",
@@ -38,7 +37,6 @@ public class UsuarioSeeder {
         UsuarioModel testerExistente = usuarioService.buscarPorEmail("tester@tester.com");
         if (testerExistente == null) {
             UsuarioCadastroDTO tester = new UsuarioCadastroDTO(
-                    null, // ID is null for new users
                     "Tester",
                     "tester@tester.com",
                     "tester",
