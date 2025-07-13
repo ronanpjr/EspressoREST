@@ -1,17 +1,15 @@
 package br.ufscar.dc.dsw.services;
 
-import br.ufscar.dc.dsw.dtos.ProjetoResumoDTO;
-import br.ufscar.dc.dsw.dtos.SessaoDetalhesDTO;
 import br.ufscar.dc.dsw.dtos.BugCadastroDTO;
 import br.ufscar.dc.dsw.dtos.BugDTO;
 import br.ufscar.dc.dsw.dtos.BugEdicaoDTO;
+import br.ufscar.dc.dsw.dtos.SessaoDetalhesDTO;
 import br.ufscar.dc.dsw.mappers.SessaoMapper;
 import br.ufscar.dc.dsw.models.BugModel;
 import br.ufscar.dc.dsw.models.SessaoModel;
 import br.ufscar.dc.dsw.models.UsuarioModel;
 import br.ufscar.dc.dsw.repositories.BugRepository;
 import br.ufscar.dc.dsw.repositories.SessaoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,29 +43,34 @@ public class BugService {
     @PreAuthorize("@securityService.podeAcessarBug(#id)")
     public BugDTO buscarBugPorId(UUID id) {
         BugModel bug = bugRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Bug não encontrado com ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Bug não encontrado com ID: " + id));
         return toBugDTO(bug);
     }
 
     @Transactional
     @PreAuthorize("@securityService.podeAcessarSessao(#dto.idSessao())")
-    public void salvarNovoBug(BugCadastroDTO dto) {
+    public BugDTO salvarNovoBug(BugCadastroDTO dto) {
         SessaoModel sessao = sessaoRepository.findById(dto.idSessao())
-            .orElseThrow(() -> new IllegalArgumentException("Sessão de teste não encontrada."));
+                .orElseThrow(() -> new IllegalArgumentException("Sessão de teste não encontrada."));
         BugModel novoBug = new BugModel();
         novoBug.setDescricao(dto.descricao());
         novoBug.setSessao(sessao);
-        bugRepository.save(novoBug);
+        
+        BugModel bugSalvo = bugRepository.save(novoBug);
+        return toBugDTO(bugSalvo);
     }
 
     @Transactional
     @PreAuthorize("@securityService.podeAcessarBug(#dto.id())")
-    public void atualizarBug(BugEdicaoDTO dto) {
+    public BugDTO atualizarBug(BugEdicaoDTO dto) {
         BugModel bugExistente = bugRepository.findById(dto.id())
-            .orElseThrow(() -> new IllegalArgumentException("Bug não encontrado."));
+                .orElseThrow(() -> new IllegalArgumentException("Bug não encontrado."));
+        
         bugExistente.setDescricao(dto.descricao());
         bugExistente.setResolvido(dto.resolvido());
-        bugRepository.save(bugExistente);
+        
+        BugModel bugAtualizado = bugRepository.save(bugExistente);
+        return toBugDTO(bugAtualizado);
     }
 
     @Transactional
@@ -89,11 +92,11 @@ public class BugService {
 
     private BugDTO toBugDTO(BugModel bug) {
         return new BugDTO(
-            bug.getId(),
-            bug.getSessao().getId(),
-            bug.getDescricao(),
-            bug.getDataRegistro(),
-            bug.isResolvido()
+                bug.getId(),
+                bug.getSessao().getId(),
+                bug.getDescricao(),
+                bug.getDataRegistro(),
+                bug.isResolvido()
         );
     }
 }
