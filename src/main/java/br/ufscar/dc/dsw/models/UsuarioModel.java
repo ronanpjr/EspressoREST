@@ -88,6 +88,10 @@ public class UsuarioModel implements Serializable, UserDetails {
         this.projetos = projetos;
     }
 
+    public boolean isAdmin() {
+        return this.papel == Papel.ADMIN;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Retorna a permissão/papel do usuário
