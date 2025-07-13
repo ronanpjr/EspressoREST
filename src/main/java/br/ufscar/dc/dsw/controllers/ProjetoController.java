@@ -1,133 +1,91 @@
 package br.ufscar.dc.dsw.controllers;
 
 import br.ufscar.dc.dsw.dtos.*;
-import br.ufscar.dc.dsw.models.enums.Papel;
+import br.ufscar.dc.dsw.models.UsuarioModel;
 import br.ufscar.dc.dsw.services.ProjetoService;
 import br.ufscar.dc.dsw.services.UsuarioService;
-import br.ufscar.dc.dsw.models.UsuarioModel;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-import org.springframework.validation.BindingResult;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-@Controller
-@RequestMapping("/projetos")
+@RestController
+@RequestMapping("/api/projetos")
 public class ProjetoController {
 
-    @Autowired
-    private ProjetoService projetoService;
+    private final ProjetoService projetoService;
+    private final UsuarioService usuarioService;
 
-    @Autowired
-    private UsuarioService usuarioService;
+    public ProjetoController(ProjetoService projetoService, UsuarioService usuarioService) {
+        this.projetoService = projetoService;
+        this.usuarioService = usuarioService;
+    }
 
-    @GetMapping("/listar")
-    public String listar(
-            ModelMap model,
-            Authentication authentication,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
-            @RequestParam(value = "sortOrder", required = false) String sortOrder
+    @PostMapping
+    public ResponseEntity<ProjetoDTO> criarProjeto(
+            @Valid @RequestBody ProjetoCadastroDTO dto,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
     ) {
-        // If sortBy or sortOrder are null, the service will apply its defaults
+        if (!usuarioLogado.isAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+        ProjetoDTO novoProjeto = projetoService.salvar(dto);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(novoProjeto.id())
+                .toUri();
+        return ResponseEntity.created(location).body(novoProjeto);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProjetoDTO>> listarProjetos(
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
         List<ProjetoDTO> projetos = projetoService.listarParaUsuarioLogado(sortBy, sortOrder);
-        model.addAttribute("listaProjetos", projetos);
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        model.addAttribute("ehAdmin", usuarioLogado.getPapel() == Papel.ADMIN);
-        return "projeto/lista";
+        return ResponseEntity.ok(projetos);
     }
 
-    @GetMapping("/cadastro")
-    public String preRenderCadastro(ModelMap model, Authentication authentication) {
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        if (usuarioLogado.getPapel() != Papel.ADMIN) {
-            return "redirect:/projetos/listar";
-        }
-        model.addAttribute("projetoCadastroDTO", new ProjetoCadastroDTO("", "", null));
-        model.addAttribute("usuarios", usuarioService.buscarTodos());
-        return "projeto/formulario";
-    }
-
-    @PostMapping("/salvar")
-    public String salvar(@Valid ProjetoCadastroDTO dto, BindingResult result, ModelMap model,
-                         RedirectAttributes attr, Authentication authentication) {
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        if (usuarioLogado.getPapel() != Papel.ADMIN) {
-            return "redirect:/projetos/listar";
-        }
-        if (result.hasErrors()) {
-            model.addAttribute("projetoCadastroDTO", dto);
-            model.addAttribute("usuarios", usuarioService.buscarTodos());
-            return "projeto/formulario";
-        }
-        try {
-            projetoService.salvar(dto);
-            attr.addFlashAttribute("success", "Projeto salvo com sucesso!");
-        } catch (Exception e) {
-            attr.addFlashAttribute("fail", "Erro ao salvar: " + e.getMessage());
-        }
-        return "redirect:/projetos/listar";
-    }
-
-    @GetMapping("/editar/{id}")
-    public String preRenderEdicao(@PathVariable UUID id, ModelMap model, Authentication authentication) {
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        if (usuarioLogado.getPapel() != Papel.ADMIN) {
-            return "redirect:/projetos/listar";
-        }
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjetoDTO> buscarPorId(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
         ProjetoDTO projeto = projetoService.buscarPorId(id);
-        ProjetoEdicaoDTO dto = new ProjetoEdicaoDTO(
-                projeto.id(),
-                projeto.nome(),
-                projeto.descricao(),
-                usuarioService.buscarTodos().stream()
-                        .filter(u -> projeto.nomesMembros().contains(u.nome()))
-                        .map(UsuarioDTO::id)
-                        .toList()
-        );
-        model.addAttribute("projetoEdicaoDTO", dto);
-        model.addAttribute("usuarios", usuarioService.buscarTodos());
-        return "projeto/formulario";
+        if (!projeto.usuarioLogadoEhMembro() && !usuarioLogado.isAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(projeto);
     }
 
-    @PostMapping("/editar")
-    public String editar(@Valid ProjetoEdicaoDTO dto, BindingResult result, ModelMap model,
-                         RedirectAttributes attr, Authentication authentication) {
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        if (usuarioLogado.getPapel() != Papel.ADMIN) {
-            return "redirect:/projetos/listar";
+    @PutMapping("/{id}")
+    public ResponseEntity<ProjetoDTO> editarProjeto(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProjetoEdicaoDTO dto,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
+        if (!usuarioLogado.isAdmin()) {
+            return ResponseEntity.status(403).build();
         }
-        if (result.hasErrors()) {
-            model.addAttribute("projetoEdicaoDTO", dto);
-            model.addAttribute("usuarios", usuarioService.buscarTodos());
-            return "projeto/formulario";
-        }
-        try {
-            projetoService.atualizar(dto);
-            attr.addFlashAttribute("success", "Projeto atualizado com sucesso!");
-        } catch (Exception e) {
-            attr.addFlashAttribute("fail", "Erro ao atualizar: " + e.getMessage());
-        }
-        return "redirect:/projetos/listar";
+        ProjetoDTO atualizado = projetoService.atualizar(dto);
+        return ResponseEntity.ok(atualizado);
     }
 
-    @GetMapping("/remover/{id}")
-    public String remover(@PathVariable UUID id, RedirectAttributes attr, Authentication authentication) {
-        UsuarioModel usuarioLogado = usuarioService.buscarPorEmail(authentication.getName());
-        if (usuarioLogado.getPapel() != Papel.ADMIN) {
-            return "redirect:/projetos/listar";
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarProjeto(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado
+    ) {
+        if (!usuarioLogado.isAdmin()) {
+            return ResponseEntity.status(403).build();
         }
-        try {
-            projetoService.excluir(id);
-            attr.addFlashAttribute("success", "Projeto removido com sucesso!");
-        } catch (Exception e) {
-            attr.addFlashAttribute("fail", "Erro ao remover: " + e.getMessage());
-        }
-        return "redirect:/projetos/listar";
+        projetoService.excluir(id);
+        return ResponseEntity.noContent().build();
     }
 }
