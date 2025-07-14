@@ -6,6 +6,7 @@ import br.ufscar.dc.dsw.security.TokenProvider;
 import br.ufscar.dc.dsw.services.UsuarioService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -50,9 +51,14 @@ public class WebSecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/login", "/error").permitAll()
                         .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
-                        .requestMatchers("/api/estrategias/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/estrategias", "/api/estrategias/**").permitAll()
+
                         // Protected endpoints
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/estrategias").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/estrategias/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/estrategias/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 // Add our custom JWT filters
