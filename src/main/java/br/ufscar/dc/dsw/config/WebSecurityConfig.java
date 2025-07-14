@@ -61,7 +61,6 @@ public class WebSecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-                // Add our custom JWT filters
                 .addFilter(new JwtAuthenticationFilter(authenticationManager, tokenProvider))
                 .addFilterBefore(new JwtAuthorizationFilter(tokenProvider, usuarioService), UsernamePasswordAuthenticationFilter.class);
 

@@ -6,10 +6,10 @@ import br.ufscar.dc.dsw.models.UsuarioModel;
 import br.ufscar.dc.dsw.models.enums.Papel;
 import br.ufscar.dc.dsw.repositories.BugRepository;
 import br.ufscar.dc.dsw.repositories.SessaoRepository;
-import br.ufscar.dc.dsw.security.UsuarioDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -28,9 +28,15 @@ public class SecurityService {
             return null;
         }
         Object principal = authentication.getPrincipal();
-        if (principal instanceof UsuarioDetails) {
-            return ((UsuarioDetails) principal).getUsuario();
+
+        if (principal instanceof UsuarioModel) {
+            return (UsuarioModel) principal;
         }
+
+        if (principal instanceof UserDetails) {
+            System.out.println("Warning: Principal is a UserDetails instance but not a UsuarioModel. This may cause issues.");
+        }
+
         return null;
     }
 
@@ -41,7 +47,7 @@ public class SecurityService {
 
         SessaoModel sessao = sessaoRepository.findById(idSessao).orElse(null);
         return sessao != null && Papel.TESTER.equals(usuarioLogado.getPapel()) &&
-               usuarioLogado.getId().equals(sessao.getTester().getId());
+                usuarioLogado.getId().equals(sessao.getTester().getId());
     }
 
     public boolean podeAcessarBug(UUID idBug) {
@@ -51,6 +57,6 @@ public class SecurityService {
 
         BugModel bug = bugRepository.findById(idBug).orElse(null);
         return bug != null && Papel.TESTER.equals(usuarioLogado.getPapel()) &&
-               usuarioLogado.getId().equals(bug.getSessao().getTester().getId());
+                usuarioLogado.getId().equals(bug.getSessao().getTester().getId());
     }
 }

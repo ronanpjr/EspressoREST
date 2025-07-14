@@ -8,6 +8,7 @@ import br.ufscar.dc.dsw.mappers.SessaoMapper;
 import br.ufscar.dc.dsw.models.BugModel;
 import br.ufscar.dc.dsw.models.SessaoModel;
 import br.ufscar.dc.dsw.models.UsuarioModel;
+import br.ufscar.dc.dsw.models.enums.StatusSessao;
 import br.ufscar.dc.dsw.repositories.BugRepository;
 import br.ufscar.dc.dsw.repositories.SessaoRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +53,9 @@ public class BugService {
     public BugDTO salvarNovoBug(BugCadastroDTO dto) {
         SessaoModel sessao = sessaoRepository.findById(dto.idSessao())
                 .orElseThrow(() -> new IllegalArgumentException("Sessão de teste não encontrada."));
+        if (sessao.getStatus() == StatusSessao.FINALIZADO) {
+            throw new IllegalStateException("Não é possível adicionar bugs a uma sessão com status FINALIZADO.");
+        }
         BugModel novoBug = new BugModel();
         novoBug.setDescricao(dto.descricao());
         novoBug.setSessao(sessao);
